@@ -9,4 +9,7 @@ def clean_text(text: str) -> str:
     # Remove markdown anchors
     text = re.sub(r"\s*\{#.*?\}", "", text)
 
+    # Remove image placeholders
+    text = re.sub(r"!\S+", "", text)
+
     return text.strip()

@@ -5,6 +5,9 @@ BAD_HEADINGS = {
     "Silver Sponsors",
     "FastAPI Conf",
     "FastAPI mini documentary",
+    "Opinions",
+    "About FastAPI Cloud",
+    "Deploy your app (optional)",
 }
 
 
@@ -82,7 +85,7 @@ def clean_section(section: dict) -> dict:
 
         cleaned = clean_text(text)
 
-        if cleaned:
+        if cleaned and len(cleaned) > 3:
             cleaned_content.append(cleaned)
 
     cleaned_code_blocks = []

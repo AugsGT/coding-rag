@@ -1,26 +1,46 @@
 from pathlib import Path
 from markdown_it import MarkdownIt
 import json
-
-from cleaner import clean_text
-from filter import (
+from app.core.config import SECTIONS_FILE
+from app.ingestion.filter import (
     clean_text,
     clean_section,
     is_useful_section,
 )
 
-MARKDOWN_FILE = Path(
-    r"C:\Storage\docs-corpus\fastapi\docs\en\docs\index.md"
+
+# DOCS ROOT
+
+DOCS_PATH = Path(
+    r"C:\Storage\docs-corpus\fastapi\docs\en\docs"
 )
 
-markdown_text = MARKDOWN_FILE.read_text(
-    encoding="utf-8"
-)
+SUPPORTED_EXTENSIONS = {
+    ".md",
+    ".mdx",
+}
+
+
+# MARKDOWN PARSER
 
 md = MarkdownIt()
 
-tokens = md.parse(markdown_text)
 
+# FILE SCANNER
+
+def scan_markdown_files(root_path):
+
+    files = []
+
+    for file in root_path.rglob("*"):
+
+        if file.suffix.lower() in SUPPORTED_EXTENSIONS:
+            files.append(file)
+
+    return files
+
+
+# SECTION EXTRACTION
 
 def extract_sections(tokens):
 
@@ -57,7 +77,9 @@ def extract_sections(tokens):
                 next_token = tokens[i + 1]
 
                 if next_token.type == "inline":
-                    heading = clean_text(next_token.content)
+                    heading = clean_text(
+                        next_token.content
+                    )
 
             current_section = {
                 "heading": heading,
@@ -95,7 +117,8 @@ def extract_sections(tokens):
                     token.content
                 )
 
-                if cleaned:
+                if cleaned and len(cleaned) > 3:
+
                     current_section["content"].append(
                         cleaned
                     )
@@ -118,38 +141,81 @@ def extract_sections(tokens):
     return sections
 
 
-######################
-#extracting sec
-sections = extract_sections(tokens)
+# INGEST FILES
+
+all_sections = []
+
+markdown_files = scan_markdown_files(
+    DOCS_PATH
+)
+
+print(
+    f"\nFound {len(markdown_files)} markdown files"
+)
+
+for file_path in markdown_files:
+
+    try:
+
+        markdown_text = file_path.read_text(
+            encoding="utf-8"
+        )
+
+        tokens = md.parse(markdown_text)
+
+        sections = extract_sections(tokens)
+
+        for section in sections:
+
+            cleaned = clean_section(
+                section
+            )
+
+            if is_useful_section(cleaned):
+
+                cleaned["source_file"] = str(
+                    file_path.relative_to(
+                        DOCS_PATH
+                    )
+                )
+
+                all_sections.append(cleaned)
+
+    except Exception as e:
+
+        print(
+            f"\nFailed parsing {file_path}"
+        )
+
+        print(e)
 
 
-#############
-#cleaning
+# SAVE OUTPUT
 
-cleaned_sections = []
+SECTIONS_FILE.parent.mkdir(
+    parents=True,
+    exist_ok=True
+)
 
-for section in sections:
-
-    cleaned = clean_section(section)
-
-    if is_useful_section(cleaned):
-        cleaned_sections.append(cleaned)
-
-########################
-#saving jsonm
 with open(
-    "sections.json",
+    SECTIONS_FILE,
     "w",
     encoding="utf-8"
 ) as f:
 
     json.dump(
-        cleaned_sections,
+        all_sections,
         f,
         indent=2,
         ensure_ascii=False
     )
 
+print(
+    f"\nSaved {len(all_sections)} sections"
+)
 
-print(f"\nSaved {len(cleaned_sections)} sections")
+print(
+    f"\nSections saved to:"
+)
 
+print(SECTIONS_FILE)

@@ -3,6 +3,7 @@ import json
 import chromadb
 
 from sentence_transformers import SentenceTransformer
+from app.core.config import CHUNKS_FILE, CHROMA_DIR
 
 
 # LOAD EMBEDDING MODEL
@@ -15,7 +16,7 @@ model = SentenceTransformer(
 # LOAD CHUNKS
 
 with open(
-    "../chunking/chunks.json",
+    CHUNKS_FILE,
     "r",
     encoding="utf-8"
 ) as f:
@@ -26,7 +27,7 @@ with open(
 
 
 client = chromadb.PersistentClient(
-    path="../../data/chroma"
+    path=str(CHROMA_DIR)
 )
 
 collection = client.get_or_create_collection(
@@ -44,12 +45,22 @@ ids = []
 
 for chunk in chunks:
 
+    code_text = "\n\n".join(
+        [
+            block["code"]
+            for block in chunk["code_blocks"]
+        ]
+    )
+
     combined_text = f"""
 Heading:
 {chunk['heading']}
 
 Content:
 {chunk['content']}
+
+Code Examples:
+{code_text}
 """
 
     documents.append(combined_text)
@@ -58,6 +69,10 @@ Content:
         {
             "heading": chunk["heading"],
             "level": chunk["level"],
+            "source_file": chunk.get(
+                "source_file",
+                "unknown"
+            ),
         }
     )
 

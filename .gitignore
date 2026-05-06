@@ -1,0 +1,38 @@
+# Virtual environments
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# VSCode
+.vscode/
+
+# Data
+data/chroma/
+data/processed/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Linting
+.ruff_cache/
+
+# Logs
+*.log
+
+# IDEs (other)
+.idea/
+
+chunks.json
+sections.json
+data/chroma/

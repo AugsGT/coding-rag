@@ -1,6 +1,7 @@
 import json
 import uuid
-
+from app.core.config import SECTIONS_FILE, CHUNKS_FILE
+from app.ingestion.filter import clean_text
 
 MAX_CHARS = 1500
 
@@ -54,7 +55,9 @@ def create_chunks(sections):
 
     for section in sections:
 
-        heading = section["heading"]
+        heading = clean_text(
+    section["heading"]
+)
 
         content_text = "\n".join(
             section["content"]
@@ -112,7 +115,7 @@ def create_chunks(sections):
 if __name__ == "__main__":
 
     with open(
-        "../ingestion/sections.json",
+        SECTIONS_FILE,
         "r",
         encoding="utf-8"
     ) as f:
@@ -121,8 +124,9 @@ if __name__ == "__main__":
 
     chunks = create_chunks(sections)
 
+    CHUNKS_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(
-        "chunks.json",
+        CHUNKS_FILE,
         "w",
         encoding="utf-8"
     ) as f:

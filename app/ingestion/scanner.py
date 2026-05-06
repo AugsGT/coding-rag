@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from app.core.config import DEFAULT_CORPUS_DIR
+
 SUPPORTED_EXTENSIONS = {".md", ".mdx"}
 
 def scan_markdown_files(root_path: str):
@@ -16,7 +18,7 @@ def scan_markdown_files(root_path: str):
 
 if __name__ == "__main__":
     files = scan_markdown_files(
-        r"C:\Storage\docs-corpus\fastapi\docs\en\docs"
+        DEFAULT_CORPUS_DIR
     )
 
     print(f"Found {len(files)} markdown files")
