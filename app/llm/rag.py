@@ -1,49 +1,50 @@
 from ollama import chat
 
-from app.retrieval.search import (
-    search_docs
+from app.retrieval.hybrid_search import (
+    hybrid_search
 )
-
 
 SYSTEM_PROMPT = """
 You are a coding documentation assistant.
 
 Answer ONLY using the provided documentation context.
 
-Rules:
-- Do not hallucinate APIs or syntax
-- Do not invent examples not present in context
-- If answer is missing from context, say:
+STRICT RULES:
+- Never invent APIs, imports, syntax, or examples
+- Never add external knowledge
+- Only use information explicitly present in context
+- If information is incomplete, say:
   "Insufficient documentation context."
-- Prefer code examples when available
-- Be concise and technical
+- Prefer directly retrieved code examples
+- Keep answers concise and technical
 - Cite SOURCE FILE and SECTION when relevant
 """
 
-
 def build_context(results):
-
-    documents = results["documents"][0]
-    metadatas = results["metadatas"][0]
-    distances = results["distances"][0]
 
     context_parts = []
 
-    for idx, doc in enumerate(documents):
+    for idx, result in enumerate(results):
 
-        metadata = metadatas[idx]
-
-        heading = metadata.get(
+        heading = result.get(
             "heading",
             "unknown"
         )
 
-        source_file = metadata.get(
+        source_file = result.get(
             "source_file",
             "unknown"
         )
 
-        distance = distances[idx]
+        score = result.get(
+            "score",
+            0.0
+        )
+
+        content = result.get(
+            "content",
+            ""
+        )
 
         context_parts.append(
             f"""
@@ -55,26 +56,34 @@ SOURCE FILE:
 SECTION:
 {heading}
 
-SIMILARITY SCORE:
-{distance:.4f}
+RETRIEVAL SCORE:
+{score:.4f}
 
 CONTENT:
-{doc}
+{content}
 """
         )
 
     return "\n".join(context_parts)
-
-
 def ask_rag(query):
 
     # -------------------------
     # RETRIEVE
     # -------------------------
 
-    results = search_docs(query)
-
+    results = hybrid_search(
+        query,
+        top_k=2
+    )
     context = build_context(results)
+    print("\nRETRIEVED SOURCES:\n")
+
+    for result in results:
+
+        print(
+            f"- {result['heading']} "
+            f"({result['source_file']})"
+        )
 
     # -------------------------
     # BUILD PROMPT
